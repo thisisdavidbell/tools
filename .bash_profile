@@ -19,7 +19,7 @@ parse_kube_target() {
     if [[ -z $KUBECONFIG ]]; then
       echo;
     else
-      cat $KUBECONFIG 2> /dev/null | grep name | head -1 | cut -d ' ' -f 3 | sed 's_\([a-z0-9][a-z0-9]*\)_(\1)_';
+      cat $KUBECONFIG 2> /dev/null | grep name | head -1 | cut -d ' ' -f 3 | sed 's_\([a-zA-Z0-9][a-zA-Z0-9]*\)_(\1)_';
     fi
 }
 
