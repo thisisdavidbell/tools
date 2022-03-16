@@ -11,8 +11,13 @@ usage() {
     printf "\n"
 }
 
-getState() {
+getModeState() {
     state=$(curl -s --digest -m 5 -u "admin:$AMCRESTPASSWORD" "http://${IPADDRESS}/cgi-bin/configManager.cgi?action=getConfig&name=Lighting" | grep Mode | cut -d"=" -f2 | tr -d '[:space:]')
+    printf "${state}"
+}
+
+getBrightness() {
+    state=$(curl -s --digest -m 5 -u "admin:$AMCRESTPASSWORD" "http://${IPADDRESS}/cgi-bin/configManager.cgi?action=getConfig&name=Lighting" | grep MiddleLight | cut -d"=" -f2 | tr -d '[:space:]')
     printf "${state}"
 }
 
@@ -21,23 +26,26 @@ setState() {
     curl -g -s --digest -m 5 -u "admin:$AMCRESTPASSWORD" "http://${IPADDRESS}/cgi-bin/configManager.cgi?action=setConfig&Lighting[0][0].Mode=Manual"
 }
 
-if [[ -z "${IPADDRESS}" ]]; then
+if [[ -z "${IPADDRESS}" ]] || [[ -z "${AMCRESTPASSWORD}" ]]; then
     usage
-elif [[ -z "${AMCRESTPASSWORD}" ]]; then
-    usage
+    exit 1
 fi
 
 for (( ; ; )); do
     date
 
-    state=$(getState)
+    state=$(getModeState)
+    brightness=$(getBrightness)
+
+    printf "Mode: %s, Brightness: %s\n" "${state}" "${brightness}"
+
 
     if [[ "${state}" == "SmartLight" ]]; then
         printf "Detected bad value: %s\n" "${state}"
         printf "Executing curl command to update Mode to manual...\n"
         setState
 
-        updatedState=$(getState)
+        updatedState=$(getModeState)
         if [[ "${updatedState}" != "Manual" ]]; then
             printf "state still not Manual, is: %s\n" "${updatedState}"
         else
