@@ -1,24 +1,26 @@
 #!/bin/bash
 
-sleepDuration=10
+sleepDuration=300
 
 usage() {
-    printf "\n"
-    printf "Usage: %s\n\n" "$(basename $0)"
+    printf "\nUsage: %s\n\n" "$(basename $0)"
     printf "Required env vars:\n"
     printf "  - IPADDRESS: ipaddress of camera\n"
-    printf "  - AMCRESTPASSWORD: ipaddress of camera\n"
-    printf "\n"
+    printf "  - AMCRESTPASSWORD: Amcrest password for camera\n\n"
 }
 
-getModeState() {
-    state=$(curl -s --digest -m 5 -u "admin:$AMCRESTPASSWORD" "http://${IPADDRESS}/cgi-bin/configManager.cgi?action=getConfig&name=Lighting" | grep Mode | cut -d"=" -f2 | tr -d '[:space:]')
+getState() {
+    field=$1
+    state=$(curl -s --digest -m 5 -u "admin:$AMCRESTPASSWORD" "http://${IPADDRESS}/cgi-bin/configManager.cgi?action=getConfig&name=Lighting" | grep "${field}" | cut -d"=" -f2 | tr -d '[:space:]')
     printf "${state}"
+
+}
+getModeState() {
+    getState "Mode"
 }
 
 getBrightness() {
-    state=$(curl -s --digest -m 5 -u "admin:$AMCRESTPASSWORD" "http://${IPADDRESS}/cgi-bin/configManager.cgi?action=getConfig&name=Lighting" | grep MiddleLight | cut -d"=" -f2 | tr -d '[:space:]')
-    printf "${state}"
+    getState "MiddleLight"
 }
 
 setState() {
@@ -34,29 +36,29 @@ fi
 for (( ; ; )); do
     date
 
-    state=$(getModeState)
+    mode=$(getModeState)
     brightness=$(getBrightness)
 
-    printf "Mode: %s, Brightness: %s\n" "${state}" "${brightness}"
+    printf "  Mode: %s, Brightness: %s\n" "${mode}" "${brightness}"
 
-
-    if [[ "${state}" == "SmartLight" ]]; then
-        printf "Detected bad value: %s\n" "${state}"
-        printf "Executing curl command to update Mode to manual...\n"
+    if [[ "${mode}" == "SmartLight" ]]; then
+        printf "  Detected bad 'Mode'': %s\n" "${mode}"
+        printf "  Executing curl command to update Mode to manual...\n"
         setState
 
-        updatedState=$(getModeState)
-        if [[ "${updatedState}" != "Manual" ]]; then
-            printf "state still not Manual, is: %s\n" "${updatedState}"
+        updatedMode=$(getModeState)
+        if [[ "${updatedMode}" != "Manual" ]]; then
+            printf "  Mode still not Manual, is: %s\n" "${updatedMode}"
         else
-            printf "state successfully updated, is: %s\n" "${updatedState}"
+            printf "  Mode successfully updated, is: %s\n" "${updatedMode}"
 
         fi
-    elif [[ "${state}" == "" ]]; then
-        printf "State was blank, CAMERA WENT DOWN (most likely)\n"
+    elif [[ "${mode}" == "" ]]; then
+        printf "  Mode was blank, CAMERA WENT DOWN (most likely)\n"
     else
-        printf "State was not SmartLight, was: %s\n" "${state}"
+        printf "  Mode was not 'SmartLight', was: '%s'\n" "${mode}"
+        printf "  Nothing to do\n"
     fi
-    printf "sleeping for %s\n\n" "${sleepDuration}"
+    printf "  Sleeping for %s\n\n" "${sleepDuration}"
     sleep ${sleepDuration}
 done
