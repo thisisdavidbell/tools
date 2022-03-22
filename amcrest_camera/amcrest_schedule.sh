@@ -1,6 +1,7 @@
 #!/bin/bash
 
-sleepDuration=300
+sleepDuration=120
+brightness=25
 
 usage() {
     printf "\nUsage: %s\n\n" "$(basename $0)"
@@ -24,7 +25,7 @@ getBrightness() {
 }
 
 setState() {
-    curl -g -s --digest -m 5 -u "admin:$AMCRESTPASSWORD" "http://${IPADDRESS}/cgi-bin/configManager.cgi?action=setConfig&Lighting[0][0].MiddleLight[0].Light=25"
+    curl -g -s --digest -m 5 -u "admin:$AMCRESTPASSWORD" "http://${IPADDRESS}/cgi-bin/configManager.cgi?action=setConfig&Lighting[0][0].MiddleLight[0].Light=${brightness}"
     curl -g -s --digest -m 5 -u "admin:$AMCRESTPASSWORD" "http://${IPADDRESS}/cgi-bin/configManager.cgi?action=setConfig&Lighting[0][0].Mode=Manual"
 }
 
@@ -41,9 +42,9 @@ for (( ; ; )); do
 
     printf "  Mode: %s, Brightness: %s\n" "${mode}" "${brightness}"
 
-    if [[ "${mode}" == "SmartLight" ]]; then
-        printf "  Detected bad 'Mode'': %s\n" "${mode}"
-        printf "  Executing curl command to update Mode to manual...\n"
+    if [[ "${mode}" != "Manual" ]]; then
+        printf "  Detected bad Mode: %s\n" "${mode}"
+        printf "  Executing curl command to update Mode to Manual...\n"
         setState
 
         updatedMode=$(getModeState)
