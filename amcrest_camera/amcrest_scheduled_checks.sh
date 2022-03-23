@@ -4,7 +4,9 @@ sleepDuration=120
 brightness=25
 
 usage() {
-    printf "\nUsage: %s\n\n" "$(basename $0)"
+    printf "\nUsage: %s\n" "$(basename $0) [-ha]"
+    printf "    -h   display usage help\n"
+    printf "    -o   run once\n\n"
     printf "Required env vars:\n"
     printf "  - IPADDRESS: ipaddress of camera\n"
     printf "  - AMCRESTPASSWORD: Amcrest password for camera\n\n"
@@ -34,32 +36,49 @@ if [[ -z "${IPADDRESS}" ]] || [[ -z "${AMCRESTPASSWORD}" ]]; then
     exit 1
 fi
 
+while getopts "ho" arg; do
+  case $arg in
+    h)
+      usage
+      exit
+      ;;
+   o)
+      runonce="enabled"
+      ;;
+  esac
+done
+
 for (( ; ; )); do
-    date
+    if [[ "${runonce}" != enabled ]]; then
+        date
+    fi
 
     mode=$(getModeState)
     brightness=$(getBrightness)
 
-    printf "  Mode: %s, Brightness: %s\n" "${mode}" "${brightness}"
+    printf "    Mode: %s, Brightness: %s\n" "${mode}" "${brightness}"
 
     if [[ "${mode}" != "Manual" ]]; then
-        printf "  Detected bad Mode: %s\n" "${mode}"
-        printf "  Executing curl command to update Mode to Manual...\n"
+        printf "    Detected bad Mode: %s\n" "${mode}"
+        printf "    Executing curl command to update Mode to Manual...\n"
         setState
 
         updatedMode=$(getModeState)
         if [[ "${updatedMode}" != "Manual" ]]; then
-            printf "  Mode still not Manual, is: %s\n" "${updatedMode}"
+            printf "    Mode still not Manual, is: %s\n" "${updatedMode}"
         else
-            printf "  Mode successfully updated, is: %s\n" "${updatedMode}"
+            printf "    Mode successfully updated, is: %s\n" "${updatedMode}"
 
         fi
     elif [[ "${mode}" == "" ]]; then
-        printf "  Mode was blank, CAMERA WENT DOWN (most likely)\n"
+        printf "    Mode was blank, CAMERA WENT DOWN (most likely)\n"
     else
-        printf "  Mode was not 'SmartLight', was: '%s'\n" "${mode}"
-        printf "  Nothing to do\n"
+        printf "    Mode was not 'SmartLight', was: '%s'\n" "${mode}"
+        printf "    Nothing to do\n"
     fi
-    printf "  Sleeping for %s\n\n" "${sleepDuration}"
+    if [[ "${runonce}" == enabled ]]; then
+        break
+    fi
+    printf "    Sleeping for %s\n\n" "${sleepDuration}"
     sleep ${sleepDuration}
 done
