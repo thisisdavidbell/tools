@@ -37,15 +37,19 @@ if [[ -z "${IPADDRESS}" ]] || [[ -z "${AMCRESTPASSWORD}" ]]; then
 fi
 
 while getopts "ho" arg; do
-  case $arg in
-    h)
-      usage
-      exit
-      ;;
-   o)
-      runonce="enabled"
-      ;;
-  esac
+    case $arg in
+        h)
+            usage
+            exit
+            ;;
+        o)
+            runonce="enabled"
+            ;;
+        *)
+            usage
+            exit
+            ;;    
+    esac
 done
 
 for (( ; ; )); do
@@ -73,7 +77,7 @@ for (( ; ; )); do
     elif [[ "${mode}" == "" ]]; then
         printf "    Mode was blank, CAMERA WENT DOWN (most likely)\n"
     else
-        printf "    Mode was not 'SmartLight', was: '%s'\n" "${mode}"
+        printf "    Mode was: '%s'\n" "${mode}"
         printf "    Nothing to do\n"
     fi
     if [[ "${runonce}" == enabled ]]; then

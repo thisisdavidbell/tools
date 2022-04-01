@@ -4,7 +4,7 @@ sleepDuration=120
 brightness=25
 
 usage() {
-    printf "\nUsage: %s\n" "$(basename $0) [-ha]"
+    printf "\nUsage: %s\n" "$(basename $0) [-h]"
     printf "    -h   display usage help\n"
     printf "Required env vars:\n"
     printf "  - IPADDRESS: ipaddress of camera\n"
@@ -12,7 +12,7 @@ usage() {
 }
 
 monitor() {
-    curl -N -s --digest -u "admin:$AMCRESTPASSWORD" "http://${IPADDRESS}/cgi-bin/eventManager.cgi?action=attach&codes=\[All\]" | xargs -I{} ./helper_process_event.sh {}
+    curl -N -s --digest -u "admin:$AMCRESTPASSWORD" "http://${IPADDRESS}/cgi-bin/eventManager.cgi?action=attach&codes=\[All\]" | xargs -I{} bash -c "if [[ '{}' == *'PLAY'* ]]; then printf '\n'; date; printf '  Found event: {}\n  Checking state...\n'; ./amcrest_scheduled_checks.sh -o; fi"
 }
 
 if [[ -z "${IPADDRESS}" ]] || [[ -z "${AMCRESTPASSWORD}" ]]; then
@@ -21,12 +21,18 @@ if [[ -z "${IPADDRESS}" ]] || [[ -z "${AMCRESTPASSWORD}" ]]; then
 fi
 
 while getopts "h" arg; do
-  case $arg in
-    h)
-      usage
-      exit
-      ;;
-  esac
+    case $arg in
+      h)
+        usage
+        exit
+        ;;
+      *)
+        usage
+        exit
+        ;;    
+    esac
 done
 
-monitor
+for (( ; ; )); do
+    monitor
+done
